@@ -425,6 +425,12 @@ body{
     <div class="compare-wrap" id="compareBars"></div>
     <div class="section-title">Gasto por categoría</div>
     <div id="rankBars"></div>
+
+    <div class="section-title">Copia de seguridad</div>
+    <div style="font-size:12px; color:var(--text-soft); margin-bottom:14px;">Guarda un archivo con todos tus movimientos, o restaura uno guardado antes.</div>
+    <button class="add-cat-btn" onclick="exportData()">Exportar datos</button>
+    <button class="add-cat-btn" style="margin-top:10px;" onclick="document.getElementById('importFile').click()">Importar datos</button>
+    <input type="file" id="importFile" accept="application/json" style="display:none" onchange="importData(event)">
   </div>
 
   <button class="fab" onclick="openAddTx()" aria-label="Añadir movimiento">+</button>
@@ -827,7 +833,61 @@ async function deleteCategory(){
   renderAll();
 }
 
+function exportData(){
+  const blob = new Blob([JSON.stringify(state, null, 2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const today = new Date().toISOString().slice(0,10);
+  a.href = url;
+  a.download = 'presupuesto-backup-' + today + '.json';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  showToast('Copia de seguridad descargada');
+}
+
+function importData(event){
+  const file = event.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = async function(e){
+    try{
+      const data = JSON.parse(e.target.result);
+      if(!Array.isArray(data.transactions) || !Array.isArray(data.expenseCategories) || !Array.isArray(data.incomeCategories)){
+        throw new Error('formato inválido');
+      }
+      state = data;
+      await persist();
+      renderAll();
+      showToast('Datos importados correctamente');
+    }catch(err){
+      showToast('El archivo no es una copia válida');
+    }
+    event.target.value = '';
+  };
+  reader.readAsText(file);
+}
+
 loadData();
 </script>
 </body>
 </html>
+  
+ 
+
+
+
+ 
+ 
+
+
+   
+    
+    
+       
+     
+
+
+
+
